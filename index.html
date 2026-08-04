@@ -357,6 +357,55 @@
   .dash-main .toolbar-right{ flex-direction:row; margin-left:auto; margin-top:0; padding-top:0; border-top:none; }
   .dash-main .toolbar-right .btn{ width:auto; }
 
+  /* ---------- Filtro Mese: multi-select a tendina ---------- */
+  .multi-select{ position:relative; width:100%; }
+  .multi-select-btn{
+    font-family:var(--sans);
+    font-size:13.5px;
+    padding:9px 12px;
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    background:var(--card-soft);
+    color:var(--ink);
+    width:100%;
+    text-align:left;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+  }
+  .multi-select-btn::after{ content:"▾"; color:var(--muted); font-size:11px; }
+  .multi-select-btn:hover{ border-color:var(--accent); }
+  .multi-select.open .multi-select-btn{ border-color:var(--accent); background:#fff; }
+  .multi-select-btn.has-selection{ border-color:var(--accent); background:var(--accent-soft); font-weight:600; }
+  .multi-select-panel{
+    display:none;
+    position:absolute;
+    top:calc(100% + 6px);
+    left:0;
+    z-index:40;
+    width:max(100%, 210px);
+    max-height:260px;
+    overflow-y:auto;
+    background:#fff;
+    border:1.5px solid var(--line);
+    border-radius:12px;
+    box-shadow:0 16px 32px -12px rgba(15,23,42,.25);
+    padding:8px;
+  }
+  .multi-select.open .multi-select-panel{ display:block; }
+  .multi-select-actions{
+    display:flex; justify-content:space-between; gap:10px;
+    padding:2px 4px 8px; margin-bottom:6px; border-bottom:1px solid var(--line);
+  }
+  .multi-select-option{
+    display:flex; align-items:center; gap:8px;
+    padding:6px 6px; border-radius:8px; cursor:pointer; font-size:13px;
+  }
+  .multi-select-option:hover{ background:var(--card-soft); }
+  .multi-select-option input{ margin:0; accent-color:var(--accent); }
+
   /* ---------- Month total banner ---------- */
   .month-banner{
     display:none;
@@ -733,8 +782,17 @@
           <select id="fModello"><option value="">Tutti</option></select>
         </div>
         <div class="field">
-          <label for="fMese">Mese</label>
-          <select id="fMese"><option value="">Tutti i mesi</option></select>
+          <label for="fMeseBtn">Mese</label>
+          <div class="multi-select" id="fMeseWrap">
+            <button type="button" class="multi-select-btn" id="fMeseBtn">Tutti i mesi</button>
+            <div class="multi-select-panel" id="fMesePanel">
+              <div class="multi-select-actions">
+                <span class="reset-link" id="fMeseSelectAll">Seleziona tutti</span>
+                <span class="reset-link" id="fMeseClear">Azzera</span>
+              </div>
+              <div id="fMeseOptions"></div>
+            </div>
+          </div>
         </div>
         <div class="field">
           <label for="fUtente">Utente</label>
@@ -1438,7 +1496,53 @@
   const fModello = document.getElementById('fModello');
   const fMagazzino = document.getElementById('fMagazzino');
   const fDateCriterio = document.getElementById('fDateCriterio');
-  const fMese = document.getElementById('fMese');
+  const fMeseBtn = document.getElementById('fMeseBtn');
+  const fMeseWrap = document.getElementById('fMeseWrap');
+  const fMesePanel = document.getElementById('fMesePanel');
+  const fMeseOptions = document.getElementById('fMeseOptions');
+  const fMeseSelectAll = document.getElementById('fMeseSelectAll');
+  const fMeseClear = document.getElementById('fMeseClear');
+  let selectedMesi = []; // array di 'YYYY-MM'; vuoto = "Tutti i mesi"
+
+  function formatMeseKey(m){
+    const [yyyy, mm] = m.split('-');
+    return MESI_IT[parseInt(mm,10)-1] + ' ' + yyyy;
+  }
+  function meseArrayLabel(arr){
+    if(!arr || arr.length === 0) return 'tutto il periodo';
+    return arr.slice().sort().map(formatMeseKey).join(', ');
+  }
+  function updateMeseButtonLabel(){
+    if(selectedMesi.length === 0){
+      fMeseBtn.textContent = 'Tutti i mesi';
+      fMeseBtn.classList.remove('has-selection');
+    }else if(selectedMesi.length === 1){
+      fMeseBtn.textContent = formatMeseKey(selectedMesi[0]);
+      fMeseBtn.classList.add('has-selection');
+    }else{
+      fMeseBtn.textContent = selectedMesi.length + ' mesi selezionati';
+      fMeseBtn.classList.add('has-selection');
+    }
+  }
+  fMeseBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    fMeseWrap.classList.toggle('open');
+  });
+  document.addEventListener('click', (e) => {
+    if(!fMeseWrap.contains(e.target)) fMeseWrap.classList.remove('open');
+  });
+  fMeseSelectAll.addEventListener('click', () => {
+    selectedMesi = Array.from(fMeseOptions.querySelectorAll('input[type=checkbox]')).map(c => c.value);
+    fMeseOptions.querySelectorAll('input[type=checkbox]').forEach(c => c.checked = true);
+    updateMeseButtonLabel();
+    applyFiltersAndRender();
+  });
+  fMeseClear.addEventListener('click', () => {
+    selectedMesi = [];
+    fMeseOptions.querySelectorAll('input[type=checkbox]').forEach(c => c.checked = false);
+    updateMeseButtonLabel();
+    applyFiltersAndRender();
+  });
   const fSearch = document.getElementById('fSearch');
   const resetFilters = document.getElementById('resetFilters');
   const exportCsv = document.getElementById('exportCsv');
@@ -1509,9 +1613,7 @@
   printScheda.addEventListener('click', () => {
     const logoSrc = document.querySelector('.topbar img.logo');
     const nomeUtente = schedaNome.textContent || '';
-    const periodoLabel = fMese.value
-      ? (() => { const [yyyy, mm] = fMese.value.split('-'); return MESI_IT[parseInt(mm,10)-1] + ' ' + yyyy; })()
-      : 'tutto il periodo';
+    const periodoLabel = meseArrayLabel(selectedMesi);
     const oggi = new Date().toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit', year:'numeric' });
     printOnlyHeader.innerHTML = `
       ${logoSrc ? `<img src="${logoSrc.src}" alt="Logo">` : ''}
@@ -1763,16 +1865,27 @@
     const magazzini = MAGAZZINO_FILTER_ORDER.filter(m => magazziniPresenti.has(m));
     const mesi = Array.from(new Set(aggregatedRows.map(r => r.dataKey.slice(0,7)))).sort();
     const currentMag = fMagazzino.value;
-    const currentMese = fMese.value;
 
     fMagazzino.innerHTML = '<option value="">Tutti</option>' + magazzini.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(MAGAZZINO_FILTER_LABELS[m] || m)}</option>`).join('');
-    fMese.innerHTML = '<option value="">Tutti i mesi</option>' + mesi.map(m => {
-      const [yyyy, mm] = m.split('-');
-      return `<option value="${m}">${MESI_IT[parseInt(mm,10)-1]} ${yyyy}</option>`;
-    }).join('');
-
     if(currentMag && magazzini.includes(currentMag)) fMagazzino.value = currentMag;
-    if(currentMese && mesi.includes(currentMese)) fMese.value = currentMese;
+
+    // Mantiene selezionati solo i mesi ancora presenti nel dataset corrente
+    selectedMesi = selectedMesi.filter(m => mesi.includes(m));
+    fMeseOptions.innerHTML = mesi.map(m => `
+      <label class="multi-select-option">
+        <input type="checkbox" value="${m}" ${selectedMesi.includes(m) ? 'checked' : ''}>
+        ${formatMeseKey(m)}
+      </label>
+    `).join('');
+    fMeseOptions.querySelectorAll('input[type=checkbox]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        if(cb.checked){ if(!selectedMesi.includes(cb.value)) selectedMesi.push(cb.value); }
+        else{ selectedMesi = selectedMesi.filter(m => m !== cb.value); }
+        updateMeseButtonLabel();
+        applyFiltersAndRender();
+      });
+    });
+    updateMeseButtonLabel();
   }
 
   // Aggiorna la lista Utenti in base al Magazzino, alla Desc. Fase, al Modello e al Mese selezionati
@@ -1780,13 +1893,13 @@
     const mg = fMagazzino.value;
     const fa = fFase.value;
     const mo = fModello.value;
-    const me = fMese.value;
+    const me = selectedMesi;
     const current = fUtente.value;
     let pool = aggregatedRows;
     if(mg) pool = pool.filter(r => r.magazzino === mg);
     if(fa) pool = pool.filter(r => r.fase === fa);
     if(mo) pool = pool.filter(r => r.modello === mo);
-    if(me) pool = pool.filter(r => r.dataKey.slice(0,7) === me);
+    if(me.length) pool = pool.filter(r => me.includes(r.dataKey.slice(0,7)));
     let utenti = Array.from(new Set(pool.map(r => r.utente))).sort();
     // "Officina Smontaggio" è un utente virtuale (reparto): compare in elenco se ci sono difettosità attribuite a lui
     if(guastoRows.some(g => g.utentePrec === OFFICINA_SMONTAGGIO)){
@@ -1816,13 +1929,13 @@
   function updateModelloOptions(){
     const mg = fMagazzino.value;
     const fa = fFase.value;
-    const me = fMese.value;
+    const me = selectedMesi;
     const ut = fUtente.value;
     const current = fModello.value;
     let pool = aggregatedRows;
     if(mg) pool = pool.filter(r => r.magazzino === mg);
     if(fa) pool = pool.filter(r => r.fase === fa);
-    if(me) pool = pool.filter(r => r.dataKey.slice(0,7) === me);
+    if(me.length) pool = pool.filter(r => me.includes(r.dataKey.slice(0,7)));
     if(ut) pool = pool.filter(r => r.utente === ut);
     const modelli = Array.from(new Set(pool.map(r => r.modello))).sort();
     fModello.innerHTML = '<option value="">Tutti</option>' + modelli.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
@@ -2197,7 +2310,7 @@
     const f = fFase.value;
     const mo = fModello.value;
     const mg = fMagazzino.value;
-    const me = fMese.value;
+    const me = selectedMesi;
     const search = fSearch.value.trim().toUpperCase();
 
     return aggregatedRows.filter(r => {
@@ -2205,7 +2318,7 @@
       if(f && r.fase !== f) return false;
       if(mo && r.modello !== mo) return false;
       if(mg && r.magazzino !== mg) return false;
-      if(me && r.dataKey.slice(0,7) !== me) return false;
+      if(me.length && !me.includes(r.dataKey.slice(0,7))) return false;
       if(search && !r.utente.toUpperCase().includes(search)) return false;
       return true;
     });
@@ -2221,7 +2334,7 @@
 
     const u = fUtente.value;
     if(u){
-      renderSchedaUtente(u, fMagazzino.value, fMese.value, fFase.value, fModello.value);
+      renderSchedaUtente(u, fMagazzino.value, selectedMesi, fFase.value, fModello.value);
       schedaPanel.style.display = 'block';
     }else{
       schedaPanel.style.display = 'none';
@@ -2229,10 +2342,9 @@
   }
 
   function renderMonthBanner(rows){
-    const me = fMese.value;
-    if(!me){ monthBanner.classList.remove('show'); return; }
-    const [yyyy, mm] = me.split('-');
-    const label = MESI_IT[parseInt(mm,10)-1] + ' ' + yyyy;
+    const me = selectedMesi;
+    if(!me.length){ monthBanner.classList.remove('show'); return; }
+    const label = meseArrayLabel(me);
     const total = rows.reduce((s,r) => s + r.count, 0);
     monthBannerLabel.textContent = label;
     monthBannerTotal.textContent = total.toLocaleString('it-IT');
@@ -2362,7 +2474,7 @@
     applyFiltersAndRender();
   });
 
-  [fUtente, fFase, fModello, fMagazzino, fMese].forEach(el => el.addEventListener('change', applyFiltersAndRender));
+  [fUtente, fFase, fModello, fMagazzino].forEach(el => el.addEventListener('change', applyFiltersAndRender));
   fSearch.addEventListener('input', applyFiltersAndRender);
 
   fDateCriterio.addEventListener('change', () => {
@@ -2375,7 +2487,10 @@
   });
 
   resetFilters.addEventListener('click', () => {
-    fUtente.value=''; fFase.value=''; fModello.value=''; fMagazzino.value=''; fMese.value=''; fSearch.value='';
+    fUtente.value=''; fFase.value=''; fModello.value=''; fMagazzino.value=''; fSearch.value='';
+    selectedMesi = [];
+    fMeseOptions.querySelectorAll('input[type=checkbox]').forEach(c => c.checked = false);
+    updateMeseButtonLabel();
     applyFiltersAndRender();
   });
 
@@ -2451,7 +2566,7 @@
 
     let rows = aggregatedRows.filter(r => r.utente === utente);
     if(magazzino) rows = rows.filter(r => r.magazzino === magazzino);
-    if(mese) rows = rows.filter(r => r.dataKey.slice(0,7) === mese);
+    if(mese && mese.length) rows = rows.filter(r => mese.includes(r.dataKey.slice(0,7)));
     if(fase) rows = rows.filter(r => r.fase === fase);
     if(modello) rows = rows.filter(r => r.modello === modello);
 
@@ -2484,7 +2599,7 @@
     const rowsAllFasi = aggregatedRows.filter(r => {
       if(r.utente !== utente) return false;
       if(magazzino && r.magazzino !== magazzino) return false;
-      if(mese && r.dataKey.slice(0,7) !== mese) return false;
+      if(mese && mese.length && !mese.includes(r.dataKey.slice(0,7))) return false;
       return true;
     });
     for(const r of rowsAllFasi) byFase.set(r.fase, (byFase.get(r.fase)||0) + r.count);
@@ -2496,7 +2611,7 @@
     const faseNumCountByDesc = new Map(); // descFase -> Map(codiceNumerico -> conteggio)
     let dedupForFaseTop = dedupedRowsGlobal.filter(r => r.utente === utente);
     if(magazzino) dedupForFaseTop = dedupForFaseTop.filter(r => r.magazzino === magazzino);
-    if(mese) dedupForFaseTop = dedupForFaseTop.filter(r => r.dayKey.slice(0,7) === mese);
+    if(mese && mese.length) dedupForFaseTop = dedupForFaseTop.filter(r => mese.includes(r.dayKey.slice(0,7)));
     for(const r of dedupForFaseTop){
       if(!faseNumCountByDesc.has(r.descFase)) faseNumCountByDesc.set(r.descFase, new Map());
       const m = faseNumCountByDesc.get(r.descFase);
@@ -2537,11 +2652,15 @@
     // - se è selezionato un mese, copre l'intero mese (fino all'ultimo giorno disponibile nel dataset, per non segnare come assenza giorni futuri)
     // - altrimenti copre dal primo all'ultimo giorno lavorato trovato
     let periodStart = null, periodEnd = null;
-    if(mese){
-      const [yyyy, mm] = mese.split('-');
-      periodStart = `${yyyy}-${mm}-01`;
-      const lastDayNum = new Date(parseInt(yyyy,10), parseInt(mm,10), 0).getDate();
-      const monthEnd = `${yyyy}-${mm}-${String(lastDayNum).padStart(2,'0')}`;
+    if(mese && mese.length){
+      // Con più mesi selezionati (anche non consecutivi) il periodo copre dal primo giorno del mese più vecchio
+      // all'ultimo giorno del mese più recente selezionato, così il grafico presenze/assenze resta continuo e leggibile
+      const sortedMesi = mese.slice().sort();
+      const [yyyyStart, mmStart] = sortedMesi[0].split('-');
+      const [yyyyEnd, mmEnd] = sortedMesi[sortedMesi.length-1].split('-');
+      periodStart = `${yyyyStart}-${mmStart}-01`;
+      const lastDayNum = new Date(parseInt(yyyyEnd,10), parseInt(mmEnd,10), 0).getDate();
+      const monthEnd = `${yyyyEnd}-${mmEnd}-${String(lastDayNum).padStart(2,'0')}`;
       const datasetMaxDay = aggregatedRows.reduce((mx,r) => r.dataKey > mx ? r.dataKey : mx, aggregatedRows[0].dataKey);
       periodEnd = monthEnd < datasetMaxDay ? monthEnd : datasetMaxDay;
       if(periodEnd < periodStart) periodEnd = periodStart;
@@ -2556,7 +2675,7 @@
     if(magazzino) rawForChart = rawForChart.filter(r => r.magazzino === magazzino);
     if(fase) rawForChart = rawForChart.filter(r => r.descFase === fase);
     if(modello) rawForChart = rawForChart.filter(r => r.modelloNome === modello);
-    if(mese) rawForChart = rawForChart.filter(r => r.dayKey.slice(0,7) === mese);
+    if(mese && mese.length) rawForChart = rawForChart.filter(r => mese.includes(r.dayKey.slice(0,7)));
     const dayDetailMap = new Map();
     for(const r of rawForChart){
       if(!dayDetailMap.has(r.dayKey)) dayDetailMap.set(r.dayKey, []);
@@ -2595,7 +2714,7 @@
     schedaMonths.innerHTML = months.map(m => {
       const [yyyy, mm] = m.split('-');
       const label = MESI_IT[parseInt(mm,10)-1] + ' ' + yyyy;
-      const active = (mese === m) ? ' active' : '';
+      const active = (mese && mese.includes(m)) ? ' active' : '';
       return `<div class="month-card${active}"><div class="mc-month">${label}</div><div class="mc-total">${byMonth.get(m)}</div></div>`;
     }).join('');
 
@@ -2838,7 +2957,7 @@
         lav = dedupedRowsGlobal.filter(r => r.utente === utente && TARGET_FASI.includes(r.fase));
       }
       if(magazzino) lav = lav.filter(r => r.magazzino === magazzino);
-      if(mese) lav = lav.filter(r => r.dayKey.slice(0,7) === mese);
+      if(mese && mese.length) lav = lav.filter(r => mese.includes(r.dayKey.slice(0,7)));
     }
     const lavMap = new Map();
     for(const r of lav){
@@ -2856,7 +2975,7 @@
     }else if(magazzinoSenzaMappa){
       dif = [];
     }
-    if(mese) dif = dif.filter(g => g.monthKey === mese);
+    if(mese && mese.length) dif = dif.filter(g => mese.includes(g.monthKey));
 
     // Se non c'è nessuna riga di questa categoria imputata a questo utente, la sezione va nascosta del tutto
     // (es. un operatore di linea non deve vedere la voce "Guasti" vuota, dato che i GUA di fase 64 non gli
@@ -2972,7 +3091,7 @@
     }else if(magazzinoSenzaMappa){
       rows = [];
     }
-    if(mese) rows = rows.filter(r => r.monthKey === mese);
+    if(mese && mese.length) rows = rows.filter(r => mese.includes(r.monthKey));
 
     const totDif = rows.filter(r => r.categoria === 'DIF').length;
     const totGua = rows.filter(r => r.categoria === 'GUA').length;
@@ -3044,9 +3163,7 @@
   function renderSchedaDifettosita(utente, magazzino, mese){
     renderSchedaSegnalazioniFatte(utente, magazzino, mese);
 
-    const periodoLabel = mese
-      ? (() => { const [yyyy, mm] = mese.split('-'); return MESI_IT[parseInt(mm,10)-1] + ' ' + yyyy; })()
-      : 'tutto il periodo';
+    const periodoLabel = meseArrayLabel(mese);
     const titleEl = document.getElementById('schedaImputateTitle');
     if(titleEl) titleEl.textContent = `⚠️ Difettosità — ${utente} — ${periodoLabel}`;
 

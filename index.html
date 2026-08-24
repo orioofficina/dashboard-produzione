@@ -2,6 +2,29 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
+<!-- Anti-cache: quando la pagina viene aggiornata su GitHub, il browser (e la CDN di GitHub Pages) potrebbero
+     comunque mostrare una copia salvata in precedenza aprendo il link dai preferiti. Questi meta tag sono un primo
+     tentativo, ma su GitHub Pages non è possibile impostare veri header HTTP Cache-Control: il meccanismo che
+     garantisce davvero sempre l'ultima versione è lo script di cache-busting subito sotto. -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<script>
+(function(){
+  // Forza sempre lo scaricamento dell'ultima versione pubblicata: se la pagina è aperta via http/https (es. link nei
+  // preferiti verso GitHub Pages) e l'URL non ha già un parametro di cache-busting, ricarica subito aggiungendone
+  // uno basato sul timestamp corrente. Un URL "nuovo" a ogni apertura impedisce al browser di riusare una copia
+  // in cache, quindi arriva sempre l'HTML più recente da GitHub. Su file:// (doppio click sul file locale) non fa
+  // nulla, per non interferire con l'uso offline del file scaricato.
+  if(/^https?:$/.test(location.protocol)){
+    var params = new URLSearchParams(location.search);
+    if(!params.has('_v')){
+      params.set('_v', Date.now().toString());
+      location.replace(location.pathname + '?' + params.toString() + location.hash);
+    }
+  }
+})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Produzione Distributori — Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -56,6 +79,16 @@
     background:linear-gradient(135deg,var(--accent),var(--accent-2));
     color:#fff;
     padding:6px 12px;
+    border-radius:999px;
+  }
+  .version-pill{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.03em;
+    background:var(--card-soft);
+    color:var(--muted);
+    border:1.5px solid var(--line);
+    padding:5px 11px;
     border-radius:999px;
   }
 
@@ -716,6 +749,7 @@
   </div>
   <div class="spacer"></div>
   <button id="sidebarToggle" type="button">🔎 Filtri</button>
+  <span class="version-pill" id="versionPill" title="Versione di questo file: se hai appena pubblicato un aggiornamento su GitHub e vedi ancora una data vecchia, forza un ricaricamento (Ctrl/Cmd+Shift+R)">…</span>
   <span class="pill">client-side · nessun dato caricato online</span>
 </div>
 <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
@@ -989,10 +1023,18 @@
   <div class="day-modal" id="cloudSyncModalContent" style="max-width:520px;"></div>
 </div>
 
-<footer id="footerText">Elaborazione interamente nel browser — nessun dato lascia il dispositivo.</footer>
+<footer><span id="footerText">Elaborazione interamente nel browser — nessun dato lascia il dispositivo.</span> <span id="footerVersion"></span></footer>
 
 <script>
 (function(){
+  // Versione "di riserva" mostrata solo se non è possibile interrogare GitHub (es. file aperto in locale via
+  // file://, rete assente, o repo non raggiungibile). Non serve più aggiornarla a mano: quando la pagina è online
+  // la versione mostrata viene recuperata automaticamente dalla data dell'ultimo commit su GitHub per questo file.
+  const APP_VERSION = '2026-08-06';
+  // Repository e percorso del file, usati per interrogare l'API pubblica di GitHub e mostrare automaticamente la
+  // data/ora dell'ultima pubblicazione. Da aggiornare solo se cambi repository o rinomini/sposti il file.
+  const GITHUB_REPO = 'orioofficina/dashboard-produzione';
+  const GITHUB_FILE_PATH = 'index.html';
   const COL = {
     MAGAZZINO: 'Magazzino',
     PROTOCOLLO: 'Protocollo',
@@ -4264,6 +4306,43 @@
   renderDeletedGuastoMini();
   renderEditedGuastoMini();
   cloudSyncInit();
+
+  // Mostra la data/ora dell'ultima pubblicazione leggendola direttamente dall'ultimo commit su GitHub per questo
+  // file, così il badge in alto e la riga in fondo restano sempre corretti senza bisogno di aggiornare manualmente
+  // una versione nel codice. Se GitHub non è raggiungibile (es. file aperto in locale via file://, rete assente,
+  // repository rinominato) si torna al valore statico APP_VERSION come riserva.
+  async function aggiornaVersioneDaGitHub(){
+    const versionPillEl = document.getElementById('versionPill');
+    const footerVersionEl = document.getElementById('footerVersion');
+    const usaFallback = () => {
+      if(versionPillEl){
+        versionPillEl.textContent = 'v' + APP_VERSION;
+        versionPillEl.title = 'Versione di riserva (non è stato possibile leggere l\'ultimo commit da GitHub)';
+      }
+      if(footerVersionEl) footerVersionEl.textContent = '· v' + APP_VERSION;
+    };
+    if(!/^https?:$/.test(location.protocol)){ usaFallback(); return; }
+    try{
+      const url = `https://api.github.com/repos/${GITHUB_REPO}/commits?path=${encodeURIComponent(GITHUB_FILE_PATH)}&per_page=1`;
+      const res = await fetch(url, { headers: { 'Accept': 'application/vnd.github+json' } });
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      const commits = await res.json();
+      const dateStr = commits && commits[0] && commits[0].commit && commits[0].commit.committer && commits[0].commit.committer.date;
+      if(!dateStr) throw new Error('data commit non trovata nella risposta di GitHub');
+      const d = new Date(dateStr);
+      const dataLabel = d.toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit', year:'numeric' });
+      const oraLabel = d.toLocaleTimeString('it-IT', { hour:'2-digit', minute:'2-digit' });
+      if(versionPillEl){
+        versionPillEl.textContent = '🔄 Aggiornato ' + dataLabel + ' ' + oraLabel;
+        versionPillEl.title = 'Data e ora dell\'ultimo commit su GitHub per questo file (' + GITHUB_REPO + '/' + GITHUB_FILE_PATH + '). Se hai appena pubblicato una modifica e vedi ancora un orario vecchio, forza un ricaricamento (Ctrl/Cmd+Shift+R).';
+      }
+      if(footerVersionEl) footerVersionEl.textContent = '· ultimo aggiornamento pubblicato il ' + dataLabel + ' alle ' + oraLabel;
+    }catch(err){
+      console.warn('Impossibile leggere la versione da GitHub, uso il valore di riserva:', err);
+      usaFallback();
+    }
+  }
+  aggiornaVersioneDaGitHub();
 
 })();
 </script>

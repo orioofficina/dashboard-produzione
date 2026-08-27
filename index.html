@@ -832,8 +832,17 @@
           <select id="fFase"><option value="">Tutte</option></select>
         </div>
         <div class="field">
-          <label for="fModello">Prod. Modello</label>
-          <select id="fModello"><option value="">Tutti</option></select>
+          <label for="fModelloBtn">Prod. Modello</label>
+          <div class="multi-select" id="fModelloWrap">
+            <button type="button" class="multi-select-btn" id="fModelloBtn">Tutti i modelli</button>
+            <div class="multi-select-panel" id="fModelloPanel">
+              <div class="multi-select-actions">
+                <span class="reset-link" id="fModelloSelectAll">Seleziona tutti</span>
+                <span class="reset-link" id="fModelloClear">Azzera</span>
+              </div>
+              <div id="fModelloOptions"></div>
+            </div>
+          </div>
         </div>
         <div class="field">
           <label for="fMeseBtn">Mese</label>
@@ -951,16 +960,11 @@
 
       <div class="scheda-group scheda-group-imputate" id="schedaGroupImputate">
         <div class="scheda-group-title imputate" id="schedaImputateTitle">⚠️ Difettosità</div>
-        <div class="scheda-group-subtitle">Difettosità/guasti/segnalazioni rilevati da altri colleghi, causati dal lavoro di questo utente</div>
+        <div class="scheda-group-subtitle">Difettosità/segnalazioni rilevate da altri colleghi, causate dal lavoro di questo utente. I guasti (GUA) non vengono imputati: si analizzano a parte nella sezione "🔧 Analisi Guasti".</div>
 
         <div class="scheda-block" id="schedaDifettiBlock">
           <h3>🛠️ Difettosità imputate (DIF)</h3>
           <div id="schedaDifetti"></div>
-        </div>
-
-        <div class="scheda-block" id="schedaGuastiBlock">
-          <h3>⚙️ Guasti rilevati, non direttamente imputabili (GUA)</h3>
-          <div id="schedaGuasti"></div>
         </div>
 
         <div class="scheda-block" id="schedaSegnalazioniBlock">
@@ -997,6 +1001,88 @@
     </div>
 
     </div>
+    </div>
+
+    <div class="panel" id="guastiAnalysisPanel">
+      <div class="panel-head" id="guastiAnalysisToggle" style="cursor:pointer;">
+        <h2>🔧 Analisi Guasti (GUA)</h2>
+        <span class="reset-link" id="guastiAnalysisChevron">▲ Nascondi</span>
+      </div>
+      <p class="note" style="margin:-6px 0 16px;">
+        Sezione indipendente dall'utente selezionato: qui i guasti (GUA) vengono analizzati per Modello, Motivo,
+        Fase, Magazzino e Mese, senza essere imputati a nessuno — servono a individuare pattern (es. componenti o
+        modelli più soggetti a guasti), non a valutare le persone.
+      </p>
+      <div class="controls" id="guastiAnalysisBody">
+        <div style="display:flex; flex-direction:row; flex-wrap:wrap; align-items:flex-end; gap:14px; width:100%;">
+          <div class="field" style="width:auto;">
+            <label for="gaMagazzino">Magazzino</label>
+            <select id="gaMagazzino" style="min-width:150px;"><option value="">Tutti</option></select>
+          </div>
+          <div class="field" style="width:auto;">
+            <label for="gaMeseBtn">Mese</label>
+            <div class="multi-select" id="gaMeseWrap" style="width:170px;">
+              <button type="button" class="multi-select-btn" id="gaMeseBtn">Tutti i mesi</button>
+              <div class="multi-select-panel" id="gaMesePanel">
+                <div class="multi-select-actions">
+                  <span class="reset-link" id="gaMeseSelectAll">Seleziona tutti</span>
+                  <span class="reset-link" id="gaMeseClear">Azzera</span>
+                </div>
+                <div id="gaMeseOptions"></div>
+              </div>
+            </div>
+          </div>
+          <div class="field" style="width:auto;">
+            <label for="gaFase">Fase (rilevazione)</label>
+            <select id="gaFase" style="min-width:170px;"><option value="">Tutte</option></select>
+          </div>
+          <div class="field" style="width:auto;">
+            <label for="gaModelloBtn">Desc. Mod.</label>
+            <div class="multi-select" id="gaModelloWrap" style="width:210px;">
+              <button type="button" class="multi-select-btn" id="gaModelloBtn">Tutti i modelli</button>
+              <div class="multi-select-panel" id="gaModelloPanel">
+                <div class="multi-select-actions">
+                  <span class="reset-link" id="gaModelloSelectAll">Seleziona tutti</span>
+                  <span class="reset-link" id="gaModelloClear">Azzera</span>
+                </div>
+                <div id="gaModelloOptions"></div>
+              </div>
+            </div>
+          </div>
+          <span class="reset-link" id="gaReset" style="margin-bottom:9px;">Azzera filtri</span>
+        </div>
+
+        <div class="scheda-stats" id="gaStats" style="margin-top:18px; width:100%;"></div>
+
+        <div class="scheda-block" id="gaMonthsBlock" style="width:100%;">
+          <h3>Totale per mese</h3>
+          <div class="month-cards" id="gaMonths"></div>
+        </div>
+
+        <div class="scheda-block" id="gaFasiBlock" style="width:100%;">
+          <h3>Ripartizione per Fase</h3>
+          <div class="fase-bars" id="gaFasi"></div>
+        </div>
+
+        <div class="scheda-block" id="gaMagazziniBlock" style="width:100%;">
+          <h3>Ripartizione per Magazzino</h3>
+          <div class="fase-bars" id="gaMagazzini"></div>
+        </div>
+
+        <div class="scheda-block" id="gaPivotBlock" style="width:100%;">
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+            <h3 id="gaPivotTitle" style="margin:0;">Dettaglio Modello → Motivo → Nota</h3>
+            <div class="field" style="width:auto;">
+              <label for="gaGroupBy">Raggruppa per</label>
+              <select id="gaGroupBy" style="min-width:170px;">
+                <option value="modello">Modello → Motivo</option>
+                <option value="motivo">Motivo → Modello</option>
+              </select>
+            </div>
+          </div>
+          <div id="gaPivot"></div>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -1711,17 +1797,40 @@
   const dataNotesGuasto = document.getElementById('dataNotesGuasto');
   const schedaSegnalazioniFatte = document.getElementById('schedaSegnalazioniFatte');
   const schedaDifetti = document.getElementById('schedaDifetti');
-  const schedaGuasti = document.getElementById('schedaGuasti');
   const schedaSegnalazioni = document.getElementById('schedaSegnalazioni');
   const appArea = document.getElementById('appArea');
   const statRow = document.getElementById('statRow');
   const statToggle = document.getElementById('statToggle');
   const statChevron = document.getElementById('statChevron');
+  const guastiAnalysisToggle = document.getElementById('guastiAnalysisToggle');
+  const guastiAnalysisChevron = document.getElementById('guastiAnalysisChevron');
+  const guastiAnalysisBody = document.getElementById('guastiAnalysisBody');
+  const gaMagazzinoSel = document.getElementById('gaMagazzino');
+  const gaMeseBtn = document.getElementById('gaMeseBtn');
+  const gaMeseWrap = document.getElementById('gaMeseWrap');
+  const gaMeseOptions = document.getElementById('gaMeseOptions');
+  const gaMeseSelectAll = document.getElementById('gaMeseSelectAll');
+  const gaMeseClear = document.getElementById('gaMeseClear');
+  let selectedGaMesi = []; // array di 'YYYY-MM'; vuoto = "Tutti i mesi"
+  const gaFaseSel = document.getElementById('gaFase');
+  const gaModelloBtn = document.getElementById('gaModelloBtn');
+  const gaModelloWrap = document.getElementById('gaModelloWrap');
+  const gaModelloOptions = document.getElementById('gaModelloOptions');
+  const gaModelloSelectAll = document.getElementById('gaModelloSelectAll');
+  const gaModelloClear = document.getElementById('gaModelloClear');
+  let selectedGaModelli = []; // array di nomi modello; vuoto = "Tutti i modelli"
+  const gaResetLink = document.getElementById('gaReset');
+  const gaStatsEl = document.getElementById('gaStats');
+  const gaMonthsEl = document.getElementById('gaMonths');
+  const gaFasiEl = document.getElementById('gaFasi');
+  const gaMagazziniEl = document.getElementById('gaMagazzini');
+  const gaPivotEl = document.getElementById('gaPivot');
+  const gaPivotTitleEl = document.getElementById('gaPivotTitle');
+  const gaGroupBySel = document.getElementById('gaGroupBy');
   const groupsContainer = document.getElementById('groupsContainer');
   const summaryLine = document.getElementById('summaryLine');
   const fUtente = document.getElementById('fUtente');
   const fFase = document.getElementById('fFase');
-  const fModello = document.getElementById('fModello');
   const fMagazzino = document.getElementById('fMagazzino');
   const fDateCriterio = document.getElementById('fDateCriterio');
   const fMeseBtn = document.getElementById('fMeseBtn');
@@ -1731,6 +1840,12 @@
   const fMeseSelectAll = document.getElementById('fMeseSelectAll');
   const fMeseClear = document.getElementById('fMeseClear');
   let selectedMesi = []; // array di 'YYYY-MM'; vuoto = "Tutti i mesi"
+  const fModelloBtn = document.getElementById('fModelloBtn');
+  const fModelloWrap = document.getElementById('fModelloWrap');
+  const fModelloOptions = document.getElementById('fModelloOptions');
+  const fModelloSelectAll = document.getElementById('fModelloSelectAll');
+  const fModelloClear = document.getElementById('fModelloClear');
+  let selectedModelli = []; // array di nomi modello; vuoto = "Tutti i modelli"
 
   function formatMeseKey(m){
     const [yyyy, mm] = m.split('-');
@@ -1756,9 +1871,6 @@
     e.stopPropagation();
     fMeseWrap.classList.toggle('open');
   });
-  document.addEventListener('click', (e) => {
-    if(!fMeseWrap.contains(e.target)) fMeseWrap.classList.remove('open');
-  });
   fMeseSelectAll.addEventListener('click', () => {
     selectedMesi = Array.from(fMeseOptions.querySelectorAll('input[type=checkbox]')).map(c => c.value);
     fMeseOptions.querySelectorAll('input[type=checkbox]').forEach(c => c.checked = true);
@@ -1770,6 +1882,102 @@
     fMeseOptions.querySelectorAll('input[type=checkbox]').forEach(c => c.checked = false);
     updateMeseButtonLabel();
     applyFiltersAndRender();
+  });
+
+  function updateModelloButtonLabel(){
+    if(selectedModelli.length === 0){
+      fModelloBtn.textContent = 'Tutti i modelli';
+      fModelloBtn.classList.remove('has-selection');
+    }else if(selectedModelli.length === 1){
+      fModelloBtn.textContent = selectedModelli[0];
+      fModelloBtn.classList.add('has-selection');
+    }else{
+      fModelloBtn.textContent = selectedModelli.length + ' modelli selezionati';
+      fModelloBtn.classList.add('has-selection');
+    }
+  }
+  fModelloBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    fModelloWrap.classList.toggle('open');
+  });
+  fModelloSelectAll.addEventListener('click', () => {
+    selectedModelli = Array.from(fModelloOptions.querySelectorAll('input[type=checkbox]')).map(c => c.value);
+    fModelloOptions.querySelectorAll('input[type=checkbox]').forEach(c => c.checked = true);
+    updateModelloButtonLabel();
+    applyFiltersAndRender();
+  });
+  fModelloClear.addEventListener('click', () => {
+    selectedModelli = [];
+    fModelloOptions.querySelectorAll('input[type=checkbox]').forEach(c => c.checked = false);
+    updateModelloButtonLabel();
+    applyFiltersAndRender();
+  });
+  // Chiude qualsiasi tendina multi-select aperta (Mese/Modello, sia nella sidebar sia nel pannello Guasti) quando si
+  // clicca fuori: un unico listener condiviso invece di uno per ciascun widget.
+  document.addEventListener('click', (e) => {
+    [fMeseWrap, fModelloWrap, gaMeseWrap, gaModelloWrap].forEach(wrap => {
+      if(wrap && !wrap.contains(e.target)) wrap.classList.remove('open');
+    });
+  });
+
+  function updateGaMeseButtonLabel(){
+    if(selectedGaMesi.length === 0){
+      gaMeseBtn.textContent = 'Tutti i mesi';
+      gaMeseBtn.classList.remove('has-selection');
+    }else if(selectedGaMesi.length === 1){
+      gaMeseBtn.textContent = formatMeseKey(selectedGaMesi[0]);
+      gaMeseBtn.classList.add('has-selection');
+    }else{
+      gaMeseBtn.textContent = selectedGaMesi.length + ' mesi selezionati';
+      gaMeseBtn.classList.add('has-selection');
+    }
+  }
+  gaMeseBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    gaMeseWrap.classList.toggle('open');
+  });
+  gaMeseSelectAll.addEventListener('click', () => {
+    selectedGaMesi = Array.from(gaMeseOptions.querySelectorAll('input[type=checkbox]')).map(c => c.value);
+    gaMeseOptions.querySelectorAll('input[type=checkbox]').forEach(c => c.checked = true);
+    updateGaMeseButtonLabel();
+    updateGaModelloOptions();
+    renderGuastiAnalysis();
+  });
+  gaMeseClear.addEventListener('click', () => {
+    selectedGaMesi = [];
+    gaMeseOptions.querySelectorAll('input[type=checkbox]').forEach(c => c.checked = false);
+    updateGaMeseButtonLabel();
+    updateGaModelloOptions();
+    renderGuastiAnalysis();
+  });
+
+  function updateGaModelloButtonLabel(){
+    if(selectedGaModelli.length === 0){
+      gaModelloBtn.textContent = 'Tutti i modelli';
+      gaModelloBtn.classList.remove('has-selection');
+    }else if(selectedGaModelli.length === 1){
+      gaModelloBtn.textContent = selectedGaModelli[0];
+      gaModelloBtn.classList.add('has-selection');
+    }else{
+      gaModelloBtn.textContent = selectedGaModelli.length + ' modelli selezionati';
+      gaModelloBtn.classList.add('has-selection');
+    }
+  }
+  gaModelloBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    gaModelloWrap.classList.toggle('open');
+  });
+  gaModelloSelectAll.addEventListener('click', () => {
+    selectedGaModelli = Array.from(gaModelloOptions.querySelectorAll('input[type=checkbox]')).map(c => c.value);
+    gaModelloOptions.querySelectorAll('input[type=checkbox]').forEach(c => c.checked = true);
+    updateGaModelloButtonLabel();
+    renderGuastiAnalysis();
+  });
+  gaModelloClear.addEventListener('click', () => {
+    selectedGaModelli = [];
+    gaModelloOptions.querySelectorAll('input[type=checkbox]').forEach(c => c.checked = false);
+    updateGaModelloButtonLabel();
+    renderGuastiAnalysis();
   });
   const fSearch = document.getElementById('fSearch');
   const resetFilters = document.getElementById('resetFilters');
@@ -1910,6 +2118,12 @@
     const collapsed = statRow.classList.toggle('collapsed');
     document.getElementById('statPanel').classList.toggle('collapsed', collapsed);
     statChevron.textContent = collapsed ? '▼ Mostra' : '▲ Nascondi';
+  });
+
+  guastiAnalysisToggle.addEventListener('click', () => {
+    const nowHidden = guastiAnalysisBody.style.display !== 'none';
+    guastiAnalysisBody.style.display = nowHidden ? 'none' : '';
+    guastiAnalysisChevron.textContent = nowHidden ? '▼ Mostra' : '▲ Nascondi';
   });
 
   // ---- Sidebar filtri: apertura/chiusura su schermi stretti ----
@@ -2168,13 +2382,13 @@
   function updateUtenteOptions(){
     const mg = fMagazzino.value;
     const fa = fFase.value;
-    const mo = fModello.value;
+    const mo = selectedModelli;
     const me = selectedMesi;
     const current = fUtente.value;
     let pool = aggregatedRows;
     if(mg) pool = pool.filter(r => r.magazzino === mg);
     if(fa) pool = pool.filter(r => r.fase === fa);
-    if(mo) pool = pool.filter(r => r.modello === mo);
+    if(mo.length) pool = pool.filter(r => mo.includes(r.modello));
     if(me.length) pool = pool.filter(r => me.includes(r.dataKey.slice(0,7)));
     let utenti = Array.from(new Set(pool.map(r => r.utente))).sort();
     // "Officina Smontaggio" è un utente virtuale (reparto): compare in elenco se ci sono difettosità attribuite a lui
@@ -2207,17 +2421,29 @@
     const fa = fFase.value;
     const me = selectedMesi;
     const ut = fUtente.value;
-    const current = fModello.value;
     let pool = aggregatedRows;
     if(mg) pool = pool.filter(r => r.magazzino === mg);
     if(fa) pool = pool.filter(r => r.fase === fa);
     if(me.length) pool = pool.filter(r => me.includes(r.dataKey.slice(0,7)));
     if(ut) pool = pool.filter(r => r.utente === ut);
     const modelli = Array.from(new Set(pool.map(r => r.modello))).sort();
-    fModello.innerHTML = '<option value="">Tutti</option>' + modelli.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
-    if(current && modelli.includes(current)){
-      fModello.value = current;
-    }
+    // Mantiene selezionati solo i modelli ancora presenti nel dataset filtrato corrente
+    selectedModelli = selectedModelli.filter(m => modelli.includes(m));
+    fModelloOptions.innerHTML = modelli.map(m => `
+      <label class="multi-select-option">
+        <input type="checkbox" value="${escapeHtml(m)}" ${selectedModelli.includes(m) ? 'checked' : ''}>
+        ${escapeHtml(m)}
+      </label>
+    `).join('');
+    fModelloOptions.querySelectorAll('input[type=checkbox]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        if(cb.checked){ if(!selectedModelli.includes(cb.value)) selectedModelli.push(cb.value); }
+        else{ selectedModelli = selectedModelli.filter(m => m !== cb.value); }
+        updateModelloButtonLabel();
+        applyFiltersAndRender();
+      });
+    });
+    updateModelloButtonLabel();
   }
 
   function renderStats(){
@@ -2309,7 +2535,10 @@
       File difettosità analizzato: <b>${escapeHtml(fname)}</b>.<br>
       <b>Categoria (Cod. Macro):</b> ogni riga viene classificata in base alla colonna "Cod. Macro":
       <br>• <b>DIF</b> — difettosità della fase precedente, imputabile: conta nel report "Difettosità imputate" e fa percentuale sulle lavorazioni.
-      <br>• <b>GUA</b> — guasto rilevato ma non direttamente imputabile come errore: ha un proprio report e una propria percentuale sulle lavorazioni, separata da quella DIF.
+      <br>• <b>GUA</b> — guasto rilevato: <u>non viene imputato a nessuno</u> (né alla persona né a un reparto), perché è un guasto
+      hardware da analizzare in sé, non un errore di produzione da attribuire. Si trova nella sezione a parte "🔧 Analisi Guasti"
+      (sopra, indipendente dall'utente selezionato), con riepilogo per Modello/Motivo/Fase/Magazzino/Mese; nella scheda del
+      singolo utente resta visibile solo "quanti GUA ha rilevato" come collaudatore, senza alcuna imputazione.
       <br>• <b>SEG</b> — segnalazione: visibile in un elenco dedicato, ma senza percentuale.
       <br>• Le righe <b>precedenti all'introduzione del Cod. Macro</b> (colonna vuota, ${guastoStats.countLegacy.toLocaleString('it-IT')} righe) vengono trattate come <b>DIF</b> indifferenziato, per continuità con i dati di quei mesi.<br>
       <b>Correzione categoria da tabella ufficiale:</b> il software sul tablet ha un bug noto che a volte scrive un Cod. Macro
@@ -2321,26 +2550,26 @@
       software, o voce non censita): <b>${(guastoStats.senzaRiscontroCatalogo||0).toLocaleString('it-IT')}</b> — per queste si usa la
       categoria letta dal file (con fallback DIF se il Cod. Macro è vuoto) e la voce <u>non</u> compare nella tendina Desc. Motivo
       del form di modifica (per non inquinare l'elenco ufficiale), ma resta visibile/modificabile aprendo quella specifica riga.<br>
-      <b>Correzione "Fase Prec.":</b> la fase a cui viene imputato il guasto (colonna Q) viene ricalcolata secondo queste regole,
-      per riportare sempre l'imputazione a una delle fasi monitorate <b>50, 64, 70</b>:
+      <b>Correzione "Fase Prec." (solo DIF e SEG):</b> la fase a cui viene imputato il guasto (colonna Q) viene ricalcolata secondo
+      queste regole, per riportare sempre l'imputazione a una delle fasi monitorate <b>50, 64, 70</b>:
       <br>• Fase 80 → imputa sempre alla <b>70</b> (se Q era 60/61/62/63/64 viene corretta a 70).
       <br>• Fase 70 → imputa alla <b>64</b> (se Q era 61/62/63); se Q era 60 viene corretta a <b>50</b>.
       <br>• Fase 64 → se Q era 61/62/63 viene corretta a <b>50</b>.
       <br>• Fase 63 → se Q era 61/62 viene corretta a <b>50</b>.
       <br>• Fase 62 → se Q era 61 viene corretta a <b>50</b>.
       <br>• Fase 61 → se Q era 60 viene corretta a <b>50</b>.
-      <br>Le righe senza <b>Utente Prec.</b> valorizzato, o la cui fase imputata corretta non rientra in 50/64/70, non vengono conteggiate nell'incrocio.<br>
-      <b>Riassegnazione Utente Prec.:</b> quando la Fase Prec. viene corretta a una fase diversa da quella indicata nel file
-      (es. 61→50), l'Utente Prec. indicato in origine si riferisce alla fase <i>prima</i> della correzione e appartiene tipicamente
-      a un'altra linea/officina: non viene usato. Al suo posto si cerca nel file Produzione chi ha realmente lavorato quel
-      Protocollo nella fase corretta, e si imputa a lui. Se non si trova un riscontro in Produzione per quella fase, la riga
+      <br>Le righe senza <b>Utente Prec.</b> valorizzato, o la cui fase imputata corretta non rientra in 50/64/70, non vengono conteggiate nell'incrocio. I GUA non passano da questa correzione: non essendo imputati, non hanno bisogno di una "fase imputata".<br>
+      <b>Riassegnazione Utente Prec. (solo DIF e SEG):</b> quando la Fase Prec. viene corretta a una fase diversa da quella indicata
+      nel file (es. 61→50), l'Utente Prec. indicato in origine si riferisce alla fase <i>prima</i> della correzione e appartiene
+      tipicamente a un'altra linea/officina: non viene usato. Al suo posto si cerca nel file Produzione chi ha realmente lavorato
+      quel Protocollo nella fase corretta, e si imputa a lui. Se non si trova un riscontro in Produzione per quella fase, la riga
       viene scartata invece di essere attribuita a chi non ha mai lavorato quella fase.
       Righe riassegnate in questo caricamento: <b>${(guastoStats.riassegnate||0).toLocaleString('it-IT')}</b>;
       righe scartate per assenza di riscontro dopo una rimappatura: <b>${(guastoStats.scartateRimappataSenzaRiscontro||0).toLocaleString('it-IT')}</b>.<br>
-      <b>GUA e fase 64:</b> per la sola categoria GUA, anche la fase 64 (montaggio) viene imputata collettivamente a
-      "${OFFICINA_SMONTAGGIO}" invece che al singolo montatore: i guasti GUA rilevati in quella fase derivano dai test che
-      gli operatori di assemblaggio fanno sui pezzi provenienti dallo smontaggio, non da un loro errore. I GUA restano
-      quindi imputati individualmente solo ai collaudatori (fase 70). Questa regola non si applica a DIF e SEG.<br>
+      <b>Imputazione Fase 50 all'Officina Smontaggio (solo DIF e SEG):</b> quando la Fase Prec. corretta è la <b>50</b>,
+      l'imputazione va collettivamente a "${OFFICINA_SMONTAGGIO}" e non alla singola persona che ha lavorato quel protocollo
+      in quella fase: chi lavora la 50 è solo l'ultimo anello della catena di quello step, non il responsabile della
+      difettosità.<br>
       <b>Riferimento temporale:</b> il mese della difettosità viene determinato cercando nel file Produzione il record con lo stesso
       <b>Protocollo</b> e la <b>Fase corretta</b>, prendendo la relativa <b>Data Inizio</b>. Se non viene trovato un riscontro, il mese è stimato
       dalla data di rilevazione del guasto (segnalato nella scheda utente).<br>
@@ -2505,6 +2734,12 @@
         dayKey: (parsedOwnForAll && !parsedOwnForAll.invalid) ? parsedOwnForAll.dayKey : null
       });
 
+      // I GUA non vengono più imputati a nessuno (né alla persona né all'officina): sono guasti hardware da
+      // analizzare a sé nella sezione dedicata "Analisi Guasti" (che usa allList/allGuastoRows sopra), non un
+      // errore di produzione da attribuire a un utente. Restano quindi fuori dal resto di questo ciclo, che si
+      // occupa solo della logica di imputazione (Fase Prec./Utente Prec.) riservata a DIF e SEG.
+      if(effCategoria === 'GUA') continue;
+
       const utentePrecOriginale = String(utentePrecRaw || '').trim();
       if(!utentePrecOriginale){ guastoStats.scartateNoUtentePrec++; continue; }
 
@@ -2532,19 +2767,15 @@
 
       // Se la Fase Prec. corretta è la 50, l'imputazione va al reparto "Officina Smontaggio" nel suo complesso, non
       // alla persona che ha lavorato quello specifico protocollo in quella fase: chi lavora la 50 è solo l'ultimo
-      // anello della catena di quello step, non il responsabile del difetto.
-      // Per la categoria GUA in particolare, anche la fase 64 (montaggio) va all'Officina Smontaggio: i guasti GUA
-      // rilevati durante il montaggio derivano dalle prove/test che gli operatori di assemblaggio fanno sui pezzi
-      // provenienti dall'officina di smontaggio, non da un errore imputabile a un singolo operatore di montaggio.
-      // I GUA restano quindi imputati individualmente solo ai collaudatori (fase 70).
-      // Per le altre rimappature, invece, l'Utente Prec. del file si riferiva alla fase ORIGINALE (prima della
-      // correzione) e va sostituito con chi ha realmente lavorato quel Protocollo nella fase corretta, secondo il
-      // file Produzione. Se non troviamo un riscontro in quei casi, la riga viene scartata invece di essere
-      // attribuita a chi non ha mai lavorato quella fase.
-      const guaVaAOfficina = effCategoria === 'GUA' && fasePrecCorretta === '64';
+      // anello della catena di quello step, non il responsabile del difetto. (A questo punto qui arrivano solo
+      // righe DIF/SEG: i GUA sono già stati esclusi sopra, quindi la fase 64 non compare mai come imputazione.)
+      // Per le rimappature (fase corretta diversa da quella originale), l'Utente Prec. del file si riferiva alla
+      // fase ORIGINALE (prima della correzione) e va sostituito con chi ha realmente lavorato quel Protocollo nella
+      // fase corretta, secondo il file Produzione. Se non troviamo un riscontro in quei casi, la riga viene
+      // scartata invece di essere attribuita a chi non ha mai lavorato quella fase.
       let utentePrec = utentePrecOriginale;
       let utentePrecRiassegnato = false;
-      if(fasePrecCorretta === '50' || guaVaAOfficina){
+      if(fasePrecCorretta === '50'){
         utentePrec = OFFICINA_SMONTAGGIO;
         utentePrecRiassegnato = true;
       }else if(faseRimappata){
@@ -2604,15 +2835,19 @@
 
     guastoRows = listFiltered;
     guastoStats.countDif = guastoRows.filter(g => g.categoria === 'DIF').length;
-    guastoStats.countGua = guastoRows.filter(g => g.categoria === 'GUA').length;
     guastoStats.countSeg = guastoRows.filter(g => g.categoria === 'SEG').length;
+    // I GUA non passano più per la logica di imputazione (niente Fase Prec./Utente Prec.), quindi il conteggio va
+    // preso da allGuastoRows (tutte le righe grezze, categoria già corretta dal catalogo): rappresenta il totale
+    // dei guasti rilevati, analizzabili nella sezione "Analisi Guasti" indipendente dall'utente.
+    guastoStats.countGua = allGuastoRows.filter(g => g.categoria === 'GUA').length;
     guastoStats.countLegacy = guastoRows.filter(g => g.categoriaLegacy).length;
     guastoStats.riassegnate = guastoRows.filter(g => g.utentePrecRiassegnato).length;
-    fileNameGuastoEl.textContent = '✓ "' + fname + '" caricato — ' + guastoStats.totalRows.toLocaleString('it-IT') + ' righe lette, ' + guastoRows.length.toLocaleString('it-IT') + ' righe imputabili (DIF ' + guastoStats.countDif + ' · GUA ' + guastoStats.countGua + ' · SEG ' + guastoStats.countSeg + ')' + (guastoStats.eliminateManualmente > 0 ? ' — ' + guastoStats.eliminateManualmente + ' escluse (eliminate manualmente)' : '');
-    fileMiniGuasto.textContent = fname + ' (DIF ' + guastoStats.countDif + ' · GUA ' + guastoStats.countGua + ' · SEG ' + guastoStats.countSeg + ')';
+    fileNameGuastoEl.textContent = '✓ "' + fname + '" caricato — ' + guastoStats.totalRows.toLocaleString('it-IT') + ' righe lette, ' + (guastoStats.countDif + guastoStats.countSeg).toLocaleString('it-IT') + ' righe imputabili (DIF ' + guastoStats.countDif + ' · SEG ' + guastoStats.countSeg + ') · ' + guastoStats.countGua.toLocaleString('it-IT') + ' guasti GUA non imputati (vedi Analisi Guasti)' + (guastoStats.eliminateManualmente > 0 ? ' — ' + guastoStats.eliminateManualmente + ' escluse (eliminate manualmente)' : '');
+    fileMiniGuasto.textContent = fname + ' (DIF ' + guastoStats.countDif + ' · SEG ' + guastoStats.countSeg + ' · GUA ' + guastoStats.countGua + ' non imputati)';
     renderNotesGuasto(fname);
     renderDeletedGuastoMini();
     renderEditedGuastoMini();
+    refreshGuastiAnalysis();
     if(!onboardingComplete && step2Zone.style.display !== 'none'){
       // Caricato durante il passo 2 del flusso iniziale: prosegue automaticamente verso la dashboard
       proceedToApp();
@@ -2625,7 +2860,7 @@
   function getFilteredRows(){
     const u = fUtente.value;
     const f = fFase.value;
-    const mo = fModello.value;
+    const mo = selectedModelli;
     const mg = fMagazzino.value;
     const me = selectedMesi;
     const search = fSearch.value.trim().toUpperCase();
@@ -2633,7 +2868,7 @@
     return aggregatedRows.filter(r => {
       if(u && r.utente !== u) return false;
       if(f && r.fase !== f) return false;
-      if(mo && r.modello !== mo) return false;
+      if(mo.length && !mo.includes(r.modello)) return false;
       if(mg && r.magazzino !== mg) return false;
       if(me.length && !me.includes(r.dataKey.slice(0,7))) return false;
       if(search && !r.utente.toUpperCase().includes(search)) return false;
@@ -2651,7 +2886,7 @@
 
     const u = fUtente.value;
     if(u){
-      renderSchedaUtente(u, fMagazzino.value, selectedMesi, fFase.value, fModello.value);
+      renderSchedaUtente(u, fMagazzino.value, selectedMesi, fFase.value, selectedModelli);
       schedaPanel.style.display = 'block';
     }else{
       schedaPanel.style.display = 'none';
@@ -2791,7 +3026,7 @@
     applyFiltersAndRender();
   });
 
-  [fUtente, fFase, fModello, fMagazzino].forEach(el => el.addEventListener('change', applyFiltersAndRender));
+  [fUtente, fFase, fMagazzino].forEach(el => el.addEventListener('change', applyFiltersAndRender));
   fSearch.addEventListener('input', applyFiltersAndRender);
 
   fDateCriterio.addEventListener('change', () => {
@@ -2804,10 +3039,13 @@
   });
 
   resetFilters.addEventListener('click', () => {
-    fUtente.value=''; fFase.value=''; fModello.value=''; fMagazzino.value=''; fSearch.value='';
+    fUtente.value=''; fFase.value=''; fMagazzino.value=''; fSearch.value='';
     selectedMesi = [];
     fMeseOptions.querySelectorAll('input[type=checkbox]').forEach(c => c.checked = false);
     updateMeseButtonLabel();
+    selectedModelli = [];
+    fModelloOptions.querySelectorAll('input[type=checkbox]').forEach(c => c.checked = false);
+    updateModelloButtonLabel();
     applyFiltersAndRender();
   });
 
@@ -2868,11 +3106,11 @@
         <div class="stat"><div class="num" style="font-size:15px;">Reparto</div><div class="lbl">Non è un singolo operatore</div></div>
       `;
       schedaChart.innerHTML = `<p class="note" style="padding:16px;">
-        "${OFFICINA_SMONTAGGIO}" raccoglie le difettosità imputate alla <b>fase 50</b> (l'ultima fase collettiva dell'officina di
-        smontaggio) più i <b>guasti GUA</b> rilevati durante il montaggio (fase 64), che derivano dai test che gli operatori di
-        assemblaggio fanno sui pezzi provenienti dallo smontaggio e non da un errore imputabile a un singolo montatore.
-        Chi ha materialmente lavorato un protocollo in quelle fasi è solo l'ultimo anello della catena, non il responsabile
-        del difetto — per questo qui non c'è un grafico di presenza individuale.
+        "${OFFICINA_SMONTAGGIO}" raccoglie le difettosità (DIF/GUA/SEG) imputate alla <b>fase 50</b>, l'ultima fase
+        collettiva dell'officina di smontaggio: chi ha materialmente lavorato un protocollo in quella fase è solo
+        l'ultimo anello della catena, non il responsabile del difetto — per questo qui non c'è un grafico di presenza
+        individuale. I guasti GUA rilevati alla fase 64 (montaggio) restano invece imputati individualmente al
+        singolo montatore, come per DIF e SEG.
       </p>`;
       schedaMonths.innerHTML = '';
       schedaFasi.innerHTML = '';
@@ -2888,7 +3126,7 @@
     if(magazzino) rows = rows.filter(r => r.magazzino === magazzino);
     if(mese && mese.length) rows = rows.filter(r => mese.includes(r.dataKey.slice(0,7)));
     if(fase) rows = rows.filter(r => r.fase === fase);
-    if(modello) rows = rows.filter(r => r.modello === modello);
+    if(modello && modello.length) rows = rows.filter(r => modello.includes(r.modello));
 
     renderSchedaTrends(utente, magazzino, fase, modello);
 
@@ -2898,10 +3136,8 @@
       schedaMonths.innerHTML = '';
       schedaFasi.innerHTML = '';
       schedaDifetti.innerHTML = '';
-      schedaGuasti.innerHTML = '';
       schedaSegnalazioni.innerHTML = '';
       schedaSegnalazioniFatte.innerHTML = '';
-      document.getElementById('schedaGuastiBlock').style.display = 'none';
       document.getElementById('schedaSegnalazioniBlock').style.display = 'none';
       return;
     }
@@ -2996,7 +3232,7 @@
     let rawForChart = dedupedRowsGlobal.filter(r => r.utente === utente);
     if(magazzino) rawForChart = rawForChart.filter(r => r.magazzino === magazzino);
     if(fase) rawForChart = rawForChart.filter(r => r.descFase === fase);
-    if(modello) rawForChart = rawForChart.filter(r => r.modelloNome === modello);
+    if(modello && modello.length) rawForChart = rawForChart.filter(r => modello.includes(r.modelloNome));
     if(mese && mese.length) rawForChart = rawForChart.filter(r => mese.includes(r.dayKey.slice(0,7)));
     const dayDetailMap = new Map();
     for(const r of rawForChart){
@@ -3059,7 +3295,7 @@
 
     const maxModello = modelliSorted.length ? modelliSorted[0][1] : 1;
     schedaModelli.innerHTML = modelliSorted.map(([modelloNome, val]) => {
-      const isActive = modello && modelloNome === modello;
+      const isActive = modello && modello.length && modello.includes(modelloNome);
       const nonMappato = modelloNome.endsWith('(non mappato)');
       return `
       <div class="fase-bar-row${isActive ? ' fase-bar-active' : ''}">
@@ -3075,34 +3311,46 @@
 
   // ---------- Incrocio Difettosità (fase precedente) ----------
   // ---------- Pivot tree condiviso: Desc. Mod. → Desc. Motivo → Nota Motivo (stile Excel PivotTable) ----------
-  function buildPivotTreeHTML(items, pivotPrefix){
+  // groupBy: 'modello' (default, invariato per tutti gli altri usi) raggruppa Modello → Motivo → Nota.
+  // 'motivo' inverte i primi due livelli in Motivo → Modello → Nota, utile per vedere se un motivo guasto prevale
+  // sugli altri a prescindere dal modello (usato dal toggle "Raggruppa per" nella sezione Analisi Guasti).
+  function buildPivotTreeHTML(items, pivotPrefix, groupBy){
     pivotPrefix = pivotPrefix || '';
+    groupBy = groupBy === 'motivo' ? 'motivo' : 'modello';
     if(!items || items.length === 0){
       return '<p class="note" style="padding:10px 4px;">Nessuna difettosità da mostrare.</p>';
     }
-    const byMod = new Map();
+    const level1Field = groupBy === 'motivo' ? 'descMotivo' : 'descMod';
+    const level2Field = groupBy === 'motivo' ? 'descMod' : 'descMotivo';
+    const level1Default = groupBy === 'motivo' ? '(non specificato)' : '—';
+    const level2Default = groupBy === 'motivo' ? '—' : '(non specificato)';
+    const level1KeyPrefix = groupBy === 'motivo' ? 'motivo' : 'mod';
+    const level2KeyPrefix = groupBy === 'motivo' ? 'mod' : 'motivo';
+    const headLabel = groupBy === 'motivo' ? 'Conteggio di Desc. Mod.' : 'Conteggio di Desc. Motivo';
+
+    const byL1 = new Map();
     for(const g of items){
-      const mod = g.descMod || '—';
-      if(!byMod.has(mod)) byMod.set(mod, []);
-      byMod.get(mod).push(g);
+      const l1 = g[level1Field] || level1Default;
+      if(!byL1.has(l1)) byL1.set(l1, []);
+      byL1.get(l1).push(g);
     }
-    const modGroups = Array.from(byMod.entries())
-      .map(([mod, its]) => ({ mod, items: its, total: its.length }))
+    const l1Groups = Array.from(byL1.entries())
+      .map(([l1, its]) => ({ l1, items: its, total: its.length }))
       .sort((a,b) => b.total - a.total);
 
-    const body = modGroups.map((mg, i) => {
-      const byMotivo = new Map();
+    const body = l1Groups.map((mg, i) => {
+      const byL2 = new Map();
       for(const g of mg.items){
-        const motivo = g.descMotivo || '(non specificato)';
-        if(!byMotivo.has(motivo)) byMotivo.set(motivo, []);
-        byMotivo.get(motivo).push(g);
+        const l2 = g[level2Field] || level2Default;
+        if(!byL2.has(l2)) byL2.set(l2, []);
+        byL2.get(l2).push(g);
       }
-      const motivoGroups = Array.from(byMotivo.entries())
-        .map(([motivo, its]) => ({ motivo, items: its, total: its.length }))
+      const l2Groups = Array.from(byL2.entries())
+        .map(([l2, its]) => ({ l2, items: its, total: its.length }))
         .sort((a,b) => b.total - a.total);
 
-      const l1Key = pivotPrefix + '::mod:' + mg.mod;
-      const motivoRowsHtml = motivoGroups.map(mtg => {
+      const l1Key = pivotPrefix + '::' + level1KeyPrefix + ':' + mg.l1;
+      const l2RowsHtml = l2Groups.map(mtg => {
         const byNota = new Map();
         for(const g of mtg.items){
           const nota = g.notaMotivo || '(nessuna nota)';
@@ -3112,8 +3360,8 @@
         const noteSorted = Array.from(byNota.entries()).sort((a,b) => b[1].length-a[1].length);
         const noteHtml = noteSorted.map(([nota, rowsForNota]) => {
           const ids = rowsForNota.map(g => g._rowId).filter(Boolean).join(',');
-          const labelForDelete = escapeHtml((mg.mod + ' — ' + mtg.motivo + (nota !== '(nessuna nota)' ? ' — ' + nota : '')).slice(0,140));
-          const l3Key = l1Key + '|motivo:' + mtg.motivo + '|nota:' + nota;
+          const labelForDelete = escapeHtml((mg.l1 + ' — ' + mtg.l2 + (nota !== '(nessuna nota)' ? ' — ' + nota : '')).slice(0,140));
+          const l3Key = l1Key + '|' + level2KeyPrefix + ':' + mtg.l2 + '|nota:' + nota;
           const detailRows = rowsForNota.slice().sort((a,b) => (a.dataSegnalazioneDisplay||'').localeCompare(b.dataSegnalazioneDisplay||'')).map(g => `
             <tr>
               <td>${escapeHtml(g.utenteCollaudatore || '—')}</td>
@@ -3144,7 +3392,7 @@
         `;
         }).join('');
         return `
-          <div class="pivot-row-l2"><span>${escapeHtml(mtg.motivo)}</span><span class="mono">${mtg.total}</span></div>
+          <div class="pivot-row-l2"><span>${escapeHtml(mtg.l2)}</span><span class="mono">${mtg.total}</span></div>
           ${noteHtml}
         `;
       }).join('');
@@ -3152,17 +3400,17 @@
       return `
         <div class="pivot-group" data-idx="${i}" data-key="${escapeHtml(l1Key)}">
           <div class="pivot-row-l1">
-            <span><span class="pivot-toggle">▾</span> ${escapeHtml(mg.mod)}</span>
+            <span><span class="pivot-toggle">▾</span> ${escapeHtml(mg.l1)}</span>
             <span class="mono">${mg.total}</span>
           </div>
-          <div class="pivot-l1-body">${motivoRowsHtml}</div>
+          <div class="pivot-l1-body">${l2RowsHtml}</div>
         </div>
       `;
     }).join('');
 
     return `
       <div class="pivot-tree">
-        <div class="pivot-head"><span>Etichette di riga</span><span>Conteggio di Desc. Motivo</span></div>
+        <div class="pivot-head"><span>Etichette di riga</span><span>${headLabel}</span></div>
         ${body}
         <div class="pivot-total"><span>Totale complessivo</span><span class="mono">${items.length}</span></div>
       </div>
@@ -3269,12 +3517,12 @@
     }
 
     // Protocolli lavorati dall'utente nelle fasi "bersaglio" (50/64/70) — serve solo per calcolare la percentuale.
-    // "Officina Smontaggio" non è una persona: il denominatore è la produzione di fase 50 (sempre) più la fase 64
-    // (solo rilevante per i GUA, che per questa categoria vengono imputati collettivamente anche dal montaggio).
+    // "Officina Smontaggio" non è una persona: il denominatore è la produzione di fase 50, l'unica fase imputata
+    // collettivamente al reparto (la fase 64 resta sempre imputata individualmente al singolo montatore).
     let lav = [];
     if(showPercent){
       if(utente === OFFICINA_SMONTAGGIO){
-        lav = dedupedRowsGlobal.filter(r => r.fase === '50' || r.fase === '64');
+        lav = dedupedRowsGlobal.filter(r => r.fase === '50');
       }else{
         lav = dedupedRowsGlobal.filter(r => r.utente === utente && TARGET_FASI.includes(r.fase));
       }
@@ -3400,12 +3648,18 @@
   // Quante segnalazioni GUA/SEG ha FATTO questo utente (come rilevatore, colonna "Utente"), riguardo la fase precedente.
   // Utile per capire chi segnala attivamente le difettosità e chi no, indipendentemente da chi ne è la causa.
   function renderSchedaSegnalazioniFatte(utente, magazzino, mese){
-    if(guastoRows.length === 0 || utente === OFFICINA_SMONTAGGIO){
+    if(guastoStats.totalRows === 0 || utente === OFFICINA_SMONTAGGIO){
       schedaSegnalazioniFatte.innerHTML = '';
       return;
     }
 
-    let rows = guastoRows.filter(g => g.utenteCollaudatore === utente);
+    // I GUA non passano più per la logica di imputazione (niente Fase Prec./Utente Prec.), quindi non sono più in
+    // guastoRows: per "cosa ha rilevato questo utente" li recuperiamo da allGuastoRows (tutte le righe grezze),
+    // così il conteggio resta completo anche per i guasti non imputati a nessuno.
+    let rows = [
+      ...guastoRows.filter(g => g.utenteCollaudatore === utente),
+      ...allGuastoRows.filter(g => g.utenteCollaudatore === utente && g.categoria === 'GUA')
+    ];
     const cittaCorrispondente = magazzino ? MAGAZZINO_PROD_TO_CITTA[magazzino] : null;
     const magazzinoSenzaMappa = !!(magazzino && !cittaCorrispondente);
     if(cittaCorrispondente){
@@ -3494,9 +3748,7 @@
         ? '<p class="note">Nessuna riga imputabile trovata per i filtri attuali (verifica il file Motivi Guasto caricato).</p>'
         : '<p class="note">Carica anche il file <b>"Motivi Guasto"</b> (pulsante in alto nel riepilogo dati) per vedere qui l\'incrocio tra protocolli lavorati e righe imputate a questo utente come fase precedente.</p>';
       schedaDifetti.innerHTML = msg;
-      schedaGuasti.innerHTML = '';
       schedaSegnalazioni.innerHTML = '';
-      document.getElementById('schedaGuastiBlock').style.display = 'none';
       document.getElementById('schedaSegnalazioniBlock').style.display = 'none';
       return;
     }
@@ -3506,15 +3758,6 @@
     wirePivotToggles(schedaDifetti);
     wireDiffGroupToggles(schedaDifetti);
     applyPersistedToggleStates(schedaDifetti);
-
-    const resGua = buildCategoriaHtml(utente, magazzino, mese, 'GUA', 'Guasti rilevati', true);
-    document.getElementById('schedaGuastiBlock').style.display = resGua.hasData ? '' : 'none';
-    if(resGua.hasData){
-      schedaGuasti.innerHTML = resGua.html;
-      wirePivotToggles(schedaGuasti);
-      wireDiffGroupToggles(schedaGuasti);
-      applyPersistedToggleStates(schedaGuasti);
-    }
 
     const resSeg = buildCategoriaHtml(utente, magazzino, mese, 'SEG', 'Segnalazioni', false);
     document.getElementById('schedaSegnalazioniBlock').style.display = resSeg.hasData ? '' : 'none';
@@ -3527,6 +3770,162 @@
 
     restoreLastGuastoScrollPosition();
   }
+
+  // ---------- Analisi Guasti (GUA) — sezione indipendente dall'utente selezionato ----------
+  // Usa allGuastoRows (TUTTE le righe grezze del file, con la categoria già corretta dal catalogo ufficiale e al
+  // netto delle eliminazioni manuali), non guastoRows: qui l'obiettivo è analizzare i guasti in sé (per capire quali
+  // componenti/modelli si rompono di più), non imputarli a una persona, quindi non serve che abbiano un riscontro
+  // di Protocollo/Fase in Produzione né un Utente Prec. valorizzato.
+  function populateGuastiAnalysisFilters(){
+    const guaAll = allGuastoRows.filter(g => g.categoria === 'GUA');
+    const magazzini = Array.from(new Set(guaAll.map(g => g.magazzino))).sort();
+    const mesi = Array.from(new Set(guaAll.map(g => g.monthKey).filter(Boolean))).sort();
+    const fasi = Array.from(new Set(guaAll.map(g => g.descFaseCorrente || g.faseCorrente).filter(Boolean))).sort();
+
+    const curMag = gaMagazzinoSel.value, curFase = gaFaseSel.value;
+    gaMagazzinoSel.innerHTML = '<option value="">Tutti</option>' + magazzini.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+    gaFaseSel.innerHTML = '<option value="">Tutte</option>' + fasi.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
+    if(magazzini.includes(curMag)) gaMagazzinoSel.value = curMag;
+    if(fasi.includes(curFase)) gaFaseSel.value = curFase;
+
+    // Mese: multi-select, come nel filtro principale. Mantiene selezionati solo i mesi ancora presenti nei dati.
+    selectedGaMesi = selectedGaMesi.filter(m => mesi.includes(m));
+    gaMeseOptions.innerHTML = mesi.map(m => `
+      <label class="multi-select-option">
+        <input type="checkbox" value="${m}" ${selectedGaMesi.includes(m) ? 'checked' : ''}>
+        ${formatMeseKey(m)}
+      </label>
+    `).join('');
+    gaMeseOptions.querySelectorAll('input[type=checkbox]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        if(cb.checked){ if(!selectedGaMesi.includes(cb.value)) selectedGaMesi.push(cb.value); }
+        else{ selectedGaMesi = selectedGaMesi.filter(m => m !== cb.value); }
+        updateGaMeseButtonLabel();
+        updateGaModelloOptions();
+        renderGuastiAnalysis();
+      });
+    });
+    updateGaMeseButtonLabel();
+
+    updateGaModelloOptions();
+  }
+
+  // Aggiorna la lista Prod. Modello del pannello Guasti in base a Magazzino, Fase e Mese selezionati lì — stessa
+  // logica dinamica già usata dal filtro Modello principale nella sidebar.
+  function updateGaModelloOptions(){
+    const guaAll = allGuastoRows.filter(g => g.categoria === 'GUA');
+    const mg = gaMagazzinoSel.value;
+    const fa = gaFaseSel.value;
+    const me = selectedGaMesi;
+    let pool = guaAll;
+    if(mg) pool = pool.filter(g => g.magazzino === mg);
+    if(fa) pool = pool.filter(g => (g.descFaseCorrente || g.faseCorrente) === fa);
+    if(me.length) pool = pool.filter(g => me.includes(g.monthKey));
+    const modelli = Array.from(new Set(pool.map(g => g.descMod).filter(Boolean))).sort();
+
+    selectedGaModelli = selectedGaModelli.filter(m => modelli.includes(m));
+    gaModelloOptions.innerHTML = modelli.map(m => `
+      <label class="multi-select-option">
+        <input type="checkbox" value="${escapeHtml(m)}" ${selectedGaModelli.includes(m) ? 'checked' : ''}>
+        ${escapeHtml(m)}
+      </label>
+    `).join('');
+    gaModelloOptions.querySelectorAll('input[type=checkbox]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        if(cb.checked){ if(!selectedGaModelli.includes(cb.value)) selectedGaModelli.push(cb.value); }
+        else{ selectedGaModelli = selectedGaModelli.filter(m => m !== cb.value); }
+        updateGaModelloButtonLabel();
+        renderGuastiAnalysis();
+      });
+    });
+    updateGaModelloButtonLabel();
+  }
+
+  function renderGuastiAnalysis(){
+    let rows = allGuastoRows.filter(g => g.categoria === 'GUA');
+    const mag = gaMagazzinoSel.value, fase = gaFaseSel.value;
+    if(mag) rows = rows.filter(g => g.magazzino === mag);
+    if(selectedGaMesi.length) rows = rows.filter(g => selectedGaMesi.includes(g.monthKey));
+    if(fase) rows = rows.filter(g => (g.descFaseCorrente || g.faseCorrente) === fase);
+    if(selectedGaModelli.length) rows = rows.filter(g => selectedGaModelli.includes(g.descMod));
+
+    if(guastoStats.totalRows === 0){
+      gaStatsEl.innerHTML = '';
+      gaMonthsEl.innerHTML = '';
+      gaFasiEl.innerHTML = '';
+      gaMagazziniEl.innerHTML = '';
+      gaPivotEl.innerHTML = '<p class="note">Carica il file <b>"Motivi Guasto"</b> (pulsante nel riepilogo dati in alto) per vedere qui l\'analisi dei guasti (GUA).</p>';
+      return;
+    }
+
+    gaStatsEl.innerHTML = `
+      <div class="stat warn"><div class="num">${rows.length.toLocaleString('it-IT')}</div><div class="lbl">Guasti (GUA) nel periodo</div></div>
+      <div class="stat"><div class="num">${new Set(rows.map(g=>g.protocollo)).size.toLocaleString('it-IT')}</div><div class="lbl">Protocolli coinvolti</div></div>
+      <div class="stat"><div class="num">${new Set(rows.map(g=>g.descMod)).size.toLocaleString('it-IT')}</div><div class="lbl">Modelli distinti coinvolti</div></div>
+    `;
+
+    const byMonth = new Map();
+    for(const g of rows){ if(!g.monthKey) continue; byMonth.set(g.monthKey, (byMonth.get(g.monthKey)||0) + 1); }
+    const monthsSorted = Array.from(byMonth.keys()).sort();
+    gaMonthsEl.innerHTML = monthsSorted.length
+      ? monthsSorted.map(m => `<div class="month-card"><div class="mc-month">${formatMeseKey(m)}</div><div class="mc-total">${byMonth.get(m)}</div></div>`).join('')
+      : '<p class="note">Nessun dato per i filtri selezionati.</p>';
+
+    const byFase = new Map();
+    for(const g of rows){ const f = g.descFaseCorrente || g.faseCorrente || '—'; byFase.set(f, (byFase.get(f)||0) + 1); }
+    const fasiSorted = Array.from(byFase.entries()).sort((a,b) => b[1]-a[1]);
+    const maxFase = fasiSorted.length ? fasiSorted[0][1] : 1;
+    gaFasiEl.innerHTML = fasiSorted.length ? fasiSorted.map(([f,v]) => `
+      <div class="fase-bar-row">
+        <div class="fase-bar-name" title="${escapeHtml(f)}">${escapeHtml(f)}</div>
+        <div class="fase-bar-track"><div class="fase-bar-fill" style="width:${(v/maxFase*100).toFixed(1)}%"></div></div>
+        <div class="fase-bar-count">${v}</div>
+      </div>
+    `).join('') : '<p class="note">Nessun dato per i filtri selezionati.</p>';
+
+    const byMag = new Map();
+    for(const g of rows){ byMag.set(g.magazzino, (byMag.get(g.magazzino)||0) + 1); }
+    const magSorted = Array.from(byMag.entries()).sort((a,b) => b[1]-a[1]);
+    const maxMag = magSorted.length ? magSorted[0][1] : 1;
+    gaMagazziniEl.innerHTML = magSorted.length ? magSorted.map(([m,v]) => `
+      <div class="fase-bar-row">
+        <div class="fase-bar-name" title="${escapeHtml(m)}">${escapeHtml(m)}</div>
+        <div class="fase-bar-track"><div class="fase-bar-fill" style="width:${(v/maxMag*100).toFixed(1)}%"></div></div>
+        <div class="fase-bar-count">${v}</div>
+      </div>
+    `).join('') : '<p class="note">Nessun dato per i filtri selezionati.</p>';
+
+    const groupBy = gaGroupBySel.value === 'motivo' ? 'motivo' : 'modello';
+    if(gaPivotTitleEl){
+      gaPivotTitleEl.textContent = groupBy === 'motivo' ? 'Dettaglio Motivo → Modello → Nota' : 'Dettaglio Modello → Motivo → Nota';
+    }
+    gaPivotEl.innerHTML = buildPivotTreeHTML(rows, 'analisi-guasti-' + groupBy, groupBy);
+    wirePivotToggles(gaPivotEl);
+    applyPersistedToggleStates(gaPivotEl);
+  }
+
+  function refreshGuastiAnalysis(){
+    populateGuastiAnalysisFilters();
+    renderGuastiAnalysis();
+  }
+
+  // Magazzino e Fase incidono sull'elenco Modelli disponibile (come nel filtro principale): quando cambiano, prima
+  // si ricalcolano le opzioni Modello, poi si aggiorna l'analisi.
+  function onGaMagazzinoOrFaseChange(){
+    updateGaModelloOptions();
+    renderGuastiAnalysis();
+  }
+  gaMagazzinoSel.addEventListener('change', onGaMagazzinoOrFaseChange);
+  gaFaseSel.addEventListener('change', onGaMagazzinoOrFaseChange);
+  gaGroupBySel.addEventListener('change', renderGuastiAnalysis);
+  gaResetLink.addEventListener('click', () => {
+    gaMagazzinoSel.value = ''; gaFaseSel.value = ''; gaGroupBySel.value = 'modello';
+    selectedGaMesi = [];
+    gaMeseOptions.querySelectorAll('input[type=checkbox]').forEach(c => c.checked = false);
+    updateGaMeseButtonLabel();
+    updateGaModelloOptions();
+    renderGuastiAnalysis();
+  });
 
   let lastChartDataByDay = new Map();
 
@@ -3543,7 +3942,7 @@
     let rows = aggregatedRows.filter(r => r.utente === utente);
     if(magazzino) rows = rows.filter(r => r.magazzino === magazzino);
     if(fase) rows = rows.filter(r => r.fase === fase);
-    if(modello) rows = rows.filter(r => r.modello === modello);
+    if(modello && modello.length) rows = rows.filter(r => modello.includes(r.modello));
 
     const byDay = new Map();
     for(const r of rows) byDay.set(r.dataKey, (byDay.get(r.dataKey)||0) + r.count);
@@ -3661,7 +4060,7 @@
     }
 
     let lav = utente === OFFICINA_SMONTAGGIO
-      ? dedupedRowsGlobal.filter(r => r.fase === '50' || r.fase === '64')
+      ? dedupedRowsGlobal.filter(r => r.fase === '50')
       : dedupedRowsGlobal.filter(r => r.utente === utente && TARGET_FASI.includes(r.fase));
     if(magazzino) lav = lav.filter(r => r.magazzino === magazzino);
     const byMonthLav = new Map();
@@ -3769,7 +4168,7 @@
     schedaTrendSummary.textContent = buildMonthlyTrendSummaryText(protoData);
     const filtriAttivi = [];
     if(fase) filtriAttivi.push('fase ' + fase);
-    if(modello) filtriAttivi.push('modello ' + modello);
+    if(modello && modello.length) filtriAttivi.push(modello.length === 1 ? 'modello ' + modello[0] : modello.length + ' modelli');
     trendBadge.textContent = filtriAttivi.length ? 'filtrato per ' + filtriAttivi.join(', ') : 'tutto lo storico';
 
     schedaDifTrendChart.innerHTML = buildDifTrendSVG(difData);
@@ -4003,13 +4402,14 @@
     guastoRows = guastoRows.filter(g => !idSet.has(g._rowId));
     allGuastoRows = allGuastoRows.filter(g => !idSet.has(g._rowId));
     guastoStats.countDif = guastoRows.filter(g => g.categoria === 'DIF').length;
-    guastoStats.countGua = guastoRows.filter(g => g.categoria === 'GUA').length;
     guastoStats.countSeg = guastoRows.filter(g => g.categoria === 'SEG').length;
+    guastoStats.countGua = allGuastoRows.filter(g => g.categoria === 'GUA').length;
     guastoStats.eliminateManualmente = (guastoStats.eliminateManualmente || 0) + ids.length;
 
     renderStats();
     renderDeletedGuastoMini();
     renderEditedGuastoMini();
+    refreshGuastiAnalysis();
     applyFiltersAndRender();
   }
 
@@ -4305,6 +4705,7 @@
 
   renderDeletedGuastoMini();
   renderEditedGuastoMini();
+  renderGuastiAnalysis();
   cloudSyncInit();
 
   // Mostra la data/ora dell'ultima pubblicazione leggendola direttamente dall'ultimo commit su GitHub per questo
